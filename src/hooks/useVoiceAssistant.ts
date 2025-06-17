@@ -52,10 +52,10 @@ export function useVoiceAssistant(
       // Only nudge if:
       // 1. User has been off-task for the configured number of consecutive analysis cycles
       // 2. Enough time has passed since last nudge
-      // 3. Confidence is reasonably high (>0.6)
+      // 3. Confidence is at least 20% (>0.2)
       if (consecutiveOffTaskCount.current >= vocalReminderFrequency && 
           shouldNudgeUser() && 
-          result.confidence > 0.6) {
+          result.confidence > 0.2) {
         
         console.log("Voice Assistant: Nudging user for being off-task");
         

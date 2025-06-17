@@ -14,7 +14,10 @@ class TTSService {
 
   constructor() {
     this.initializeGroq();
-    this.initializeAudioContext();
+    // Don't initialize AudioContext on server-side
+    if (typeof window !== 'undefined') {
+      this.initializeAudioContext();
+    }
   }
 
   private initializeGroq() {
@@ -37,6 +40,12 @@ class TTSService {
 
   private initializeAudioContext() {
     try {
+      // Ensure we're running in the browser
+      if (typeof window === 'undefined') {
+        console.warn("AudioContext not available in server environment");
+        return;
+      }
+
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     } catch (error) {
       console.error("Failed to initialize AudioContext:", error);
