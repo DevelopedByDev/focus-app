@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Clock, Target, StopCircle, Eye, Brain, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Monitor, Clock, Target, StopCircle, Eye, Brain, CheckCircle, AlertTriangle, Loader2, Volume2, VolumeX } from "lucide-react";
 import { SessionData } from "./SessionSetupDialog";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
+import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 
 interface ActiveSessionProps {
   sessionData: SessionData;
@@ -27,6 +28,13 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
     analyzeScreenshot,
     clearAnalysis
   } = useAIAnalysis();
+
+  const {
+    isSpeaking,
+    isEnabled: isVoiceAssistantEnabled,
+    toggleVoiceAssistant,
+    handleAnalysisResult
+  } = useVoiceAssistant(true);
 
   // Timer effect
   useEffect(() => {
@@ -57,6 +65,13 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
       setLastAnalyzedScreenshot(lastScreenshot);
     }
   }, [lastScreenshot, lastAnalyzedScreenshot, isAnalyzing, analyzeScreenshot, sessionData]);
+
+  // Voice Assistant effect - handle analysis results for voice nudges
+  useEffect(() => {
+    if (analysisResult && !isAnalyzing) {
+      handleAnalysisResult(analysisResult);
+    }
+  }, [analysisResult, isAnalyzing, handleAnalysisResult]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -96,6 +111,16 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
               <Badge variant={isCapturing ? "default" : "secondary"} className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
                 {isCapturing ? "Monitoring" : "Paused"}
+              </Badge>
+              <Badge 
+                variant={isVoiceAssistantEnabled ? "default" : "secondary"} 
+                className={`flex items-center gap-1 cursor-pointer hover:opacity-80 ${
+                  isSpeaking ? 'animate-pulse' : ''
+                }`}
+                onClick={toggleVoiceAssistant}
+              >
+                {isVoiceAssistantEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+                {isSpeaking ? "Speaking..." : isVoiceAssistantEnabled ? "Voice On" : "Voice Off"}
               </Badge>
               <Button variant="destructive" onClick={handleEndSession}>
                 <StopCircle className="h-4 w-4 mr-2" />
@@ -196,6 +221,9 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
             </CardTitle>
             <CardDescription>
               Real-time AI assessment of whether you're staying on task
+              {isVoiceAssistantEnabled && (
+                <span className="text-blue-600 font-medium"> • Voice nudges enabled</span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,6 +273,12 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
                 }`}>
                   {analysisResult.explanation}
                 </p>
+                {!analysisResult.isOnTask && isVoiceAssistantEnabled && (
+                  <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                    <Volume2 className="h-3 w-3" />
+                    Voice assistant will provide nudges if you stay off-task
+                  </div>
+                )}
               </div>
             ) : lastScreenshot ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
