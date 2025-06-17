@@ -5,16 +5,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Eye, Shield, Zap, Brain, Clock, Target } from "lucide-react";
 import { useState } from "react";
+import { SessionSetupDialog, SessionData } from "@/components/SessionSetupDialog";
+import { ActiveSession } from "@/components/ActiveSession";
+import { useScreenCapture } from "@/hooks/useScreenCapture";
 
 export default function Home() {
-  const [isStarting, setIsStarting] = useState(false);
+  const [isSetupDialogOpen, setIsSetupDialogOpen] = useState(false);
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
+  const { isCapturing, lastScreenshot, error, startCapture, stopCapture } = useScreenCapture();
 
   const handleStartSession = () => {
-    setIsStarting(true);
-    // TODO: Navigate to session setup page
-    setTimeout(() => setIsStarting(false), 2000); // Temporary simulation
+    setIsSetupDialogOpen(true);
   };
 
+  const handleSessionStart = async (sessionData: SessionData) => {
+    try {
+      await startCapture();
+      setCurrentSession(sessionData);
+      setIsSetupDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to start session:", error);
+      // The error is already handled in the hook and dialog
+      throw error;
+    }
+  };
+
+  const handleEndSession = () => {
+    stopCapture();
+    setCurrentSession(null);
+  };
+
+  // Show active session if one is running
+  if (currentSession) {
+    return (
+      <ActiveSession
+        sessionData={currentSession}
+        lastScreenshot={lastScreenshot}
+        isCapturing={isCapturing}
+        onEndSession={handleEndSession}
+      />
+    );
+  }
+
+  // Show landing page
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -49,24 +82,23 @@ export default function Home() {
               size="lg" 
               className="text-lg px-8 py-6 h-auto"
               onClick={handleStartSession}
-              disabled={isStarting}
             >
-              {isStarting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-5 w-5 mr-2" />
-                  Start Focus Session
-                </>
-              )}
+              <Zap className="h-5 w-5 mr-2" />
+              Start Focus Session
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-8 py-6 h-auto">
               Learn More
             </Button>
           </div>
+
+          {/* Display error if any */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">
+                <strong>Error:</strong> {error}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Features Section */}
@@ -155,19 +187,9 @@ export default function Home() {
             variant="secondary"
             className="text-lg px-8 py-6 h-auto"
             onClick={handleStartSession}
-            disabled={isStarting}
           >
-            {isStarting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900 border-t-transparent mr-2" />
-                Starting Session...
-              </>
-            ) : (
-              <>
-                <Clock className="h-5 w-5 mr-2" />
-                Start Your First Session
-              </>
-            )}
+            <Clock className="h-5 w-5 mr-2" />
+            Start Your First Session
           </Button>
         </div>
       </main>
@@ -178,6 +200,13 @@ export default function Home() {
           <p>&copy; 2024 FocusAI. Built for productivity enthusiasts.</p>
         </div>
       </footer>
+
+      {/* Session Setup Dialog */}
+      <SessionSetupDialog
+        isOpen={isSetupDialogOpen}
+        onClose={() => setIsSetupDialogOpen(false)}
+        onStartSession={handleSessionStart}
+      />
     </div>
   );
 }
