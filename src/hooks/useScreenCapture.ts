@@ -6,7 +6,7 @@ export interface ScreenCaptureHook {
   isCapturing: boolean;
   lastScreenshot: string | null;
   error: string | null;
-  startCapture: () => Promise<void>;
+  startCapture: (intervalSeconds?: number) => Promise<void>;
   stopCapture: () => void;
 }
 
@@ -45,7 +45,7 @@ export function useScreenCapture(): ScreenCaptureHook {
     }
   }, []);
 
-  const startCapture = useCallback(async () => {
+  const startCapture = useCallback(async (intervalSeconds: number = 30) => {
     try {
       setError(null);
       
@@ -90,14 +90,14 @@ export function useScreenCapture(): ScreenCaptureHook {
         }
       }, 1000);
 
-      // Set up interval to capture screenshots every 30 seconds
+      // Set up interval to capture screenshots at the specified interval
       intervalRef.current = setInterval(async () => {
         const screenshot = await captureScreenshot();
         if (screenshot) {
           setLastScreenshot(screenshot);
           console.log("Screenshot captured at:", new Date().toLocaleTimeString());
         }
-      }, 30000); // 30 seconds
+      }, intervalSeconds * 1000); // Convert seconds to milliseconds
 
       // Handle stream ending (user stops sharing)
       stream.getVideoTracks()[0].addEventListener("ended", () => {

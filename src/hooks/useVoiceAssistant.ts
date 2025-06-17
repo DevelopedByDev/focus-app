@@ -14,7 +14,10 @@ export interface VoiceAssistantHook {
   setNudgeInterval: (minutes: number) => void;
 }
 
-export function useVoiceAssistant(initialEnabled: boolean = true): VoiceAssistantHook {
+export function useVoiceAssistant(
+  initialEnabled: boolean = true, 
+  vocalReminderFrequency: number = 2
+): VoiceAssistantHook {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [lastNudgeTime, setLastNudgeTime] = useState<number | null>(null);
@@ -47,28 +50,31 @@ export function useVoiceAssistant(initialEnabled: boolean = true): VoiceAssistan
       consecutiveOffTaskCount.current += 1;
       
       // Only nudge if:
-      // 1. User has been off-task for 2+ consecutive analysis cycles
+      // 1. User has been off-task for the configured number of consecutive analysis cycles
       // 2. Enough time has passed since last nudge
       // 3. Confidence is reasonably high (>0.6)
-      if (consecutiveOffTaskCount.current >= 2 && 
+      if (consecutiveOffTaskCount.current >= vocalReminderFrequency && 
           shouldNudgeUser() && 
           result.confidence > 0.6) {
         
         console.log("Voice Assistant: Nudging user for being off-task");
         
+        setIsSpeaking(true);
         try {
           await ttsService.nudgeUser();
           setLastNudgeTime(Date.now());
           consecutiveOffTaskCount.current = 0; // Reset counter after nudge
         } catch (error) {
           console.error("Failed to play nudge audio:", error);
+        } finally {
+          setIsSpeaking(false);
         }
       }
     } else {
       // User is back on task, reset counter
       consecutiveOffTaskCount.current = 0;
     }
-  }, [isEnabled, isSpeaking, shouldNudgeUser]);
+  }, [isEnabled, isSpeaking, shouldNudgeUser, vocalReminderFrequency]);
 
   const toggleVoiceAssistant = useCallback(() => {
     setIsEnabled(prev => !prev);

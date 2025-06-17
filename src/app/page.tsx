@@ -20,7 +20,7 @@ export default function Home() {
 
   const handleSessionStart = async (sessionData: SessionData) => {
     try {
-      await startCapture();
+      await startCapture(sessionData.screenshotInterval);
       setCurrentSession(sessionData);
       setIsSetupDialogOpen(false);
     } catch (error) {
@@ -72,8 +72,8 @@ export default function Home() {
               <span className="text-blue-600"> AI Monitoring</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Set your goal, start working, and let AI analyze your screen every 30 seconds 
-              to keep you focused and on track. Real-time feedback when you drift off task.
+              Set your goal, customize your monitoring preferences, and let AI analyze your screen 
+              to keep you focused and on track. Real-time feedback and voice nudges when you drift off task.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export default function Home() {
               </div>
               <CardTitle>Smart Monitoring</CardTitle>
               <CardDescription>
-                AI analyzes your screen every 30 seconds to understand what you're working on
+                AI analyzes your screen at customizable intervals to understand what you're working on
               </CardDescription>
             </CardHeader>
           </Card>
@@ -134,7 +134,7 @@ export default function Home() {
               </div>
               <CardTitle>Real-time Feedback</CardTitle>
               <CardDescription>
-                Instant overlay notifications when you drift off task to keep you focused
+                Configurable voice nudges and visual feedback when you drift off task to keep you focused
               </CardDescription>
             </CardHeader>
           </Card>

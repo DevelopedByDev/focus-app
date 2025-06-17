@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Target, Monitor } from "lucide-react";
+import { Clock, Target, Monitor, Camera, Volume2 } from "lucide-react";
 
 interface SessionSetupDialogProps {
   isOpen: boolean;
@@ -19,12 +19,16 @@ export interface SessionData {
   taskDescription: string;
   duration: number; // in minutes
   primaryApps: string;
+  screenshotInterval: number; // in seconds
+  vocalReminderFrequency: number; // every N distraction screenshots
 }
 
 export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionSetupDialogProps) {
   const [taskDescription, setTaskDescription] = useState("");
   const [duration, setDuration] = useState<number>(25);
   const [primaryApps, setPrimaryApps] = useState("");
+  const [screenshotInterval, setScreenshotInterval] = useState<number>(30);
+  const [vocalReminderFrequency, setVocalReminderFrequency] = useState<number>(2);
   const [isStarting, setIsStarting] = useState(false);
 
   const handleStart = async () => {
@@ -39,6 +43,8 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
       taskDescription: taskDescription.trim(),
       duration,
       primaryApps: primaryApps.trim(),
+      screenshotInterval,
+      vocalReminderFrequency,
     };
 
     try {
@@ -56,6 +62,8 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
     setTaskDescription("");
     setDuration(25);
     setPrimaryApps("");
+    setScreenshotInterval(30);
+    setVocalReminderFrequency(2);
     setIsStarting(false);
   };
 
@@ -97,22 +105,25 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
           <div className="space-y-2">
             <Label htmlFor="duration" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Session Duration
+              Session Duration (minutes)
             </Label>
-            <Select value={duration.toString()} onValueChange={(value) => setDuration(parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="15">15 minutes</SelectItem>
-                <SelectItem value="25">25 minutes (Pomodoro)</SelectItem>
-                <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="45">45 minutes</SelectItem>
-                <SelectItem value="60">1 hour</SelectItem>
-                <SelectItem value="90">1.5 hours</SelectItem>
-                <SelectItem value="120">2 hours</SelectItem>
-              </SelectContent>
-            </Select>
+            <Input
+              id="duration"
+              type="number"
+              min="1"
+              max="60"
+              value={duration}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value >= 1 && value <= 60) {
+                  setDuration(value);
+                }
+              }}
+              placeholder="25"
+            />
+            <p className="text-xs text-gray-500">
+              Choose between 1 and 60 minutes
+            </p>
           </div>
 
           {/* Primary Apps */}
@@ -129,6 +140,57 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
             />
             <p className="text-xs text-gray-500">
               Apps you'll primarily use - helps AI better understand when you're on task
+            </p>
+          </div>
+
+          {/* Screenshot Interval */}
+          <div className="space-y-2">
+            <Label htmlFor="screenshot-interval" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Screenshot Interval (seconds)
+            </Label>
+            <Input
+              id="screenshot-interval"
+              type="number"
+              min="10"
+              max="120"
+              value={screenshotInterval}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value >= 10 && value <= 120) {
+                  setScreenshotInterval(value);
+                }
+              }}
+              placeholder="30"
+            />
+            <p className="text-xs text-gray-500">
+              How often to take screenshots for AI analysis (10-120 seconds)
+            </p>
+          </div>
+
+          {/* Vocal Reminder Frequency */}
+          <div className="space-y-2">
+            <Label htmlFor="vocal-reminders" className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4" />
+              Vocal Reminders
+            </Label>
+            <Select 
+              value={vocalReminderFrequency.toString()} 
+              onValueChange={(value) => setVocalReminderFrequency(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Every distraction screenshot</SelectItem>
+                <SelectItem value="2">Every 2 distraction screenshots</SelectItem>
+                <SelectItem value="3">Every 3 distraction screenshots</SelectItem>
+                <SelectItem value="4">Every 4 distraction screenshots</SelectItem>
+                <SelectItem value="5">Every 5 distraction screenshots</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              How often to get voice nudges when you're off-task
             </p>
           </div>
         </div>

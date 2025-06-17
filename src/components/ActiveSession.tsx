@@ -34,7 +34,7 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
     isEnabled: isVoiceAssistantEnabled,
     toggleVoiceAssistant,
     handleAnalysisResult
-  } = useVoiceAssistant(true);
+  } = useVoiceAssistant(true, sessionData.vocalReminderFrequency);
 
   // Timer effect
   useEffect(() => {
@@ -131,7 +131,7 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
         </div>
 
         {/* Session Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -162,16 +162,45 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
-                Primary Apps
+                Screenshot Interval
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600">
-                {sessionData.primaryApps || "Not specified"}
+                Every {sessionData.screenshotInterval}s
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Volume2 className="h-4 w-4" />
+                Voice Nudges
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Every {sessionData.vocalReminderFrequency} distractions
               </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Primary Apps - Separate Row */}
+        {sessionData.primaryApps && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                Primary Apps/Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">{sessionData.primaryApps}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Screenshot Display */}
         <Card className="mb-6">
@@ -182,7 +211,7 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
             </CardTitle>
             <CardDescription>
               {lastScreenshot 
-                ? "AI analyzes this view every 30 seconds to keep you on track"
+                ? `AI analyzes this view every ${sessionData.screenshotInterval} seconds to keep you on track`
                 : "Waiting for first screenshot..."
               }
             </CardDescription>

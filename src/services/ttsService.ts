@@ -5,14 +5,16 @@ import Groq from 'groq-sdk';
 export interface TTSOptions {
   voice?: string;
   model?: string;
-  responseFormat?: string;
+  responseFormat?: "wav" | "flac" | "mp3" | "mulaw" | "ogg";
 }
 
 class TTSService {
   private groq: Groq | null = null;
+  private audioContext: AudioContext | null = null;
 
   constructor() {
     this.initializeGroq();
+    this.initializeAudioContext();
   }
 
   private initializeGroq() {
@@ -33,6 +35,14 @@ class TTSService {
     }
   }
 
+  private initializeAudioContext() {
+    try {
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    } catch (error) {
+      console.error("Failed to initialize AudioContext:", error);
+    }
+  }
+
   async synthesizeSpeech(
     text: string, 
     options: TTSOptions = {}
@@ -45,7 +55,7 @@ class TTSService {
     const {
       voice = "Fritz-PlayAI",
       model = "playai-tts",
-      responseFormat = "wav"
+      responseFormat = "wav" as const
     } = options;
 
     try {
@@ -65,14 +75,44 @@ class TTSService {
 
   async playAudio(audioBuffer: ArrayBuffer): Promise<void> {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const audioData = await audioContext.decodeAudioData(audioBuffer);
-      const source = audioContext.createBufferSource();
+      // Initialize AudioContext if not already done or if it was closed
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        this.initializeAudioContext();
+      }
+
+      if (!this.audioContext) {
+        console.error("AudioContext not available");
+        return;
+      }
+
+      // Resume AudioContext if it's suspended (common due to browser autoplay policies)
+      if (this.audioContext.state === 'suspended') {
+        console.log("Resuming suspended AudioContext");
+        await this.audioContext.resume();
+      }
+
+      // Create a copy of the buffer for decoding (some browsers modify the original)
+      const bufferCopy = audioBuffer.slice(0);
+      const audioData = await this.audioContext.decodeAudioData(bufferCopy);
+      
+      const source = this.audioContext.createBufferSource();
       source.buffer = audioData;
-      source.connect(audioContext.destination);
-      source.start();
+      source.connect(this.audioContext.destination);
+      
+      // Use a promise to track when playback completes
+      return new Promise<void>((resolve) => {
+        source.onended = () => {
+          console.log("Audio playback completed");
+          resolve();
+        };
+        
+        source.start();
+      });
     } catch (error) {
       console.error("Error playing audio:", error);
+      // Try to reinitialize the AudioContext for next time
+      this.initializeAudioContext();
+      throw error;
     }
   }
 
@@ -102,6 +142,15 @@ class TTSService {
   async nudgeUser(customMessage?: string): Promise<void> {
     const message = customMessage || this.getRandomNudgeMessage();
     await this.speakText(message);
+  }
+
+  // Cleanup method to close AudioContext when done
+  cleanup(): void {
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      console.log("Closing AudioContext");
+      this.audioContext.close();
+      this.audioContext = null;
+    }
   }
 }
 
