@@ -45,10 +45,11 @@ export function useAIAnalysis(): AIAnalysisHook {
         setAnalysisError(null);
         console.log("AI Analysis completed:", result);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("AI Analysis failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error during analysis";
       setAnalysisError({
-        error: error.message || "Unknown error during analysis",
+        error: errorMessage,
         code: "ANALYSIS_EXCEPTION"
       });
       setAnalysisResult(null);

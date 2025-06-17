@@ -102,17 +102,32 @@ export function useScreenCapture(): ScreenCaptureHook {
       // Handle stream ending (user stops sharing)
       stream.getVideoTracks()[0].addEventListener("ended", () => {
         console.log("Screen sharing stopped by user");
-        stopCapture();
+        // Inline the stop logic to avoid circular dependency
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+          videoRef.current = null;
+        }
+        setIsCapturing(false);
+        setError(null);
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error starting screen capture:", err);
-      if (err.name === "NotAllowedError") {
+      const error = err as Error;
+      if (error.name === "NotAllowedError") {
         setError("Screen sharing permission denied. Please allow screen sharing to start the session.");
-      } else if (err.name === "NotSupportedError") {
+      } else if (error.name === "NotSupportedError") {
         setError("Screen sharing is not supported in this browser. Please use Chrome, Firefox, or Safari.");
       } else {
-        setError(err.message || "Failed to start screen capture");
+        setError(error.message || "Failed to start screen capture");
       }
       setIsCapturing(false);
     }

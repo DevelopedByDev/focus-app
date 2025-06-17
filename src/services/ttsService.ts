@@ -46,7 +46,11 @@ class TTSService {
         return;
       }
 
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Type-safe way to handle webkit prefixed AudioContext
+      const AudioContextConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextConstructor) {
+        this.audioContext = new AudioContextConstructor();
+      }
     } catch (error) {
       console.error("Failed to initialize AudioContext:", error);
     }

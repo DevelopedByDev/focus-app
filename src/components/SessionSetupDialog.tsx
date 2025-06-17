@@ -139,7 +139,7 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
               onChange={(e) => setPrimaryApps(e.target.value)}
             />
             <p className="text-xs text-gray-500">
-              Apps you'll primarily use - helps AI better understand when you're on task
+              Apps you&apos;ll primarily use - helps AI better understand when you&apos;re on task
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export function SessionSetupDialog({ isOpen, onClose, onStartSession }: SessionS
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500">
-              How often to get voice nudges when you're off-task
+              How often to get voice nudges when you&apos;re off-task
             </p>
           </div>
         </div>

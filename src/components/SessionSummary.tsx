@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, Clock, Target, BarChart3, AlertTriangle, CheckCircle, 
   Camera, TrendingUp, Lightbulb, Home, RotateCcw 
@@ -55,7 +54,7 @@ export function SessionSummary({
             <h1 className="text-3xl font-bold text-gray-900">Session Complete!</h1>
           </div>
           <p className="text-xl text-gray-600">
-            Here's how you performed during your focus session
+            Here&apos;s how you performed during your focus session
           </p>
         </div>
 

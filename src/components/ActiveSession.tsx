@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Monitor, Clock, Target, StopCircle, Eye, Brain, CheckCircle, AlertTriangle, Loader2, Volume2, VolumeX } from "lucide-react";
+import Image from "next/image";
 import { SessionData } from "./SessionSetupDialog";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
@@ -18,7 +19,7 @@ interface ActiveSessionProps {
   onSessionComplete: (sessionStats: SessionStats) => void;
 }
 
-export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndSession, onSessionComplete }: ActiveSessionProps) {
+export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onSessionComplete }: ActiveSessionProps) {
   const [timeRemaining, setTimeRemaining] = useState(sessionData.duration * 60); // Convert to seconds
   const [isActive, setIsActive] = useState(true);
   const [lastAnalyzedScreenshot, setLastAnalyzedScreenshot] = useState<string | null>(null);
@@ -275,7 +276,7 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
               AI Focus Analysis
             </CardTitle>
             <CardDescription>
-              Real-time AI assessment of whether you're staying on task
+              Real-time AI assessment of whether you&apos;re staying on task
               {isVoiceAssistantEnabled && (
                 <span className="text-blue-600 font-medium"> • Voice nudges enabled</span>
               )}

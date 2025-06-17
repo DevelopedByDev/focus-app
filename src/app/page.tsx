@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Shield, Zap, Brain, Clock, Target } from "lucide-react";
 import { useState } from "react";
@@ -150,7 +150,7 @@ export default function Home() {
               </div>
               <CardTitle>Smart Monitoring</CardTitle>
               <CardDescription>
-                AI analyzes your screen at customizable intervals to understand what you're working on
+                AI analyzes your screen at customizable intervals to understand what you&apos;re working on
               </CardDescription>
             </CardHeader>
           </Card>

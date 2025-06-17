@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
 export interface TaskAnalysisResult {
   isOnTask: boolean;
@@ -15,7 +15,7 @@ export interface AnalysisError {
 
 class AIAnalysisService {
   private genAI: GoogleGenerativeAI | null = null;
-  private model: any = null;
+  private model: GenerativeModel | null = null;
 
   constructor() {
     this.initializeAI();
@@ -104,17 +104,18 @@ class AIAnalysisService {
         confidence: Math.max(0, Math.min(1, result.confidence)) // Clamp between 0 and 1
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error analyzing screenshot:", error);
+      const err = error as Error;
       
-      if (error.message?.includes('API key')) {
+      if (err.message?.includes('API key')) {
         return {
           error: "Invalid API key. Please check your Google AI API key configuration.",
           code: "INVALID_API_KEY"
         };
       }
       
-      if (error.message?.includes('quota')) {
+      if (err.message?.includes('quota')) {
         return {
           error: "API quota exceeded. Please try again later.",
           code: "QUOTA_EXCEEDED"
@@ -122,7 +123,7 @@ class AIAnalysisService {
       }
 
       return {
-        error: `Analysis failed: ${error.message || 'Unknown error'}`,
+        error: `Analysis failed: ${err.message || 'Unknown error'}`,
         code: "ANALYSIS_FAILED"
       };
     }
