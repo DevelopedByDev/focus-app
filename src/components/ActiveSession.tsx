@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Clock, Target, StopCircle, Eye } from "lucide-react";
+import { Monitor, Clock, Target, StopCircle, Eye, Brain, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { SessionData } from "./SessionSetupDialog";
+import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 
 interface ActiveSessionProps {
   sessionData: SessionData;
@@ -17,7 +18,17 @@ interface ActiveSessionProps {
 export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndSession }: ActiveSessionProps) {
   const [timeRemaining, setTimeRemaining] = useState(sessionData.duration * 60); // Convert to seconds
   const [isActive, setIsActive] = useState(true);
+  const [lastAnalyzedScreenshot, setLastAnalyzedScreenshot] = useState<string | null>(null);
+  
+  const {
+    analysisResult,
+    analysisError,
+    isAnalyzing,
+    analyzeScreenshot,
+    clearAnalysis
+  } = useAIAnalysis();
 
+  // Timer effect
   useEffect(() => {
     if (!isActive || timeRemaining <= 0) return;
 
@@ -34,6 +45,19 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
     return () => clearInterval(timer);
   }, [isActive, timeRemaining]);
 
+  // AI Analysis effect - trigger when new screenshot is available
+  useEffect(() => {
+    if (lastScreenshot && lastScreenshot !== lastAnalyzedScreenshot && !isAnalyzing) {
+      console.log("New screenshot detected, starting AI analysis...");
+      analyzeScreenshot(
+        lastScreenshot,
+        sessionData.taskDescription,
+        sessionData.primaryApps
+      );
+      setLastAnalyzedScreenshot(lastScreenshot);
+    }
+  }, [lastScreenshot, lastAnalyzedScreenshot, isAnalyzing, analyzeScreenshot, sessionData]);
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -47,7 +71,12 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
 
   const handleEndSession = () => {
     setIsActive(false);
+    clearAnalysis();
     onEndSession();
+  };
+
+  const formatConfidence = (confidence: number) => {
+    return `${Math.round(confidence * 100)}%`;
   };
 
   return (
@@ -153,6 +182,79 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
                 <p className="text-gray-500">
                   {isCapturing ? "Taking first screenshot..." : "Screen sharing not active"}
                 </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* AI Analysis Results */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Focus Analysis
+            </CardTitle>
+            <CardDescription>
+              Real-time AI assessment of whether you're staying on task
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isAnalyzing ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-3" />
+                <span className="text-gray-600">Analyzing screenshot...</span>
+              </div>
+            ) : analysisError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <span className="font-medium text-red-800">Analysis Error</span>
+                </div>
+                <p className="text-red-700 text-sm">{analysisError.error}</p>
+                {analysisError.code === "SERVICE_NOT_INITIALIZED" && (
+                  <p className="text-red-600 text-xs mt-2">
+                    💡 Add your Google AI API key to enable AI analysis
+                  </p>
+                )}
+              </div>
+            ) : analysisResult ? (
+              <div className={`border rounded-lg p-4 ${
+                analysisResult.isOnTask 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {analysisResult.isOnTask ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    )}
+                    <span className={`font-medium ${
+                      analysisResult.isOnTask ? 'text-green-800' : 'text-yellow-800'
+                    }`}>
+                      {analysisResult.isOnTask ? 'On Task ✅' : 'Potentially Off Task ⚠️'}
+                    </span>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {formatConfidence(analysisResult.confidence)} confident
+                  </Badge>
+                </div>
+                <p className={`text-sm ${
+                  analysisResult.isOnTask ? 'text-green-700' : 'text-yellow-700'
+                }`}>
+                  {analysisResult.explanation}
+                </p>
+              </div>
+            ) : lastScreenshot ? (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Brain className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">Waiting for AI analysis...</p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Brain className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">AI analysis will appear here once screenshots are available</p>
               </div>
             )}
           </CardContent>
