@@ -247,10 +247,13 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onSess
             {lastScreenshot ? (
               <div className="space-y-4">
                 <div className="border rounded-lg overflow-hidden bg-gray-100">
-                  <img 
+                  <Image 
                     src={lastScreenshot} 
                     alt="Current screen capture" 
+                    width={800}
+                    height={600}
                     className="w-full h-auto max-h-96 object-contain"
+                    unoptimized={true}
                   />
                 </div>
                 <p className="text-xs text-gray-500 text-center">

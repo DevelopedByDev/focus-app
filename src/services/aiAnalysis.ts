@@ -34,25 +34,7 @@ class AIAnalysisService {
       this.model = this.genAI.getGenerativeModel({ 
         model: "gemini-2.0-flash-exp",
         generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "object",
-            properties: {
-              isOnTask: {
-                type: "boolean",
-                description: "Whether the user appears to be working on their intended task"
-              },
-              explanation: {
-                type: "string",
-                description: "Brief explanation of why the user is or isn't on task"
-              },
-              confidence: {
-                type: "number",
-                description: "Confidence level from 0.0 to 1.0 in the analysis"
-              }
-            },
-            required: ["isOnTask", "explanation", "confidence"]
-          }
+          responseMimeType: "application/json"
         }
       });
     } catch (error) {
