@@ -8,15 +8,17 @@ import { Monitor, Clock, Target, StopCircle, Eye, Brain, CheckCircle, AlertTrian
 import { SessionData } from "./SessionSetupDialog";
 import { useAIAnalysis } from "@/hooks/useAIAnalysis";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
+import { sessionAnalyticsService, SessionStats } from "@/services/sessionAnalytics";
 
 interface ActiveSessionProps {
   sessionData: SessionData;
   lastScreenshot: string | null;
   isCapturing: boolean;
   onEndSession: () => void;
+  onSessionComplete: (sessionStats: SessionStats) => void;
 }
 
-export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndSession }: ActiveSessionProps) {
+export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndSession, onSessionComplete }: ActiveSessionProps) {
   const [timeRemaining, setTimeRemaining] = useState(sessionData.duration * 60); // Convert to seconds
   const [isActive, setIsActive] = useState(true);
   const [lastAnalyzedScreenshot, setLastAnalyzedScreenshot] = useState<string | null>(null);
@@ -36,6 +38,12 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
     handleAnalysisResult
   } = useVoiceAssistant(true, sessionData.vocalReminderFrequency);
 
+  // Initialize session analytics
+  useEffect(() => {
+    sessionAnalyticsService.startSession(sessionData.duration);
+    console.log("Session analytics initialized");
+  }, [sessionData.duration]);
+
   // Timer effect
   useEffect(() => {
     if (!isActive || timeRemaining <= 0) return;
@@ -52,6 +60,18 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
 
     return () => clearInterval(timer);
   }, [isActive, timeRemaining]);
+
+  // Auto-end session when timer reaches 0
+  useEffect(() => {
+    if (timeRemaining <= 0 && isActive) {
+      console.log("Session timer completed, ending session automatically");
+      setIsActive(false);
+      
+      // Generate session stats and call completion handler
+      const stats = sessionAnalyticsService.endSession();
+      onSessionComplete(stats);
+    }
+  }, [timeRemaining, isActive, onSessionComplete]);
 
   // AI Analysis effect - trigger when new screenshot is available
   useEffect(() => {
@@ -70,8 +90,11 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
   useEffect(() => {
     if (analysisResult && !isAnalyzing) {
       handleAnalysisResult(analysisResult);
+      
+      // Track analysis result in session analytics
+      sessionAnalyticsService.addAnalysisResult(analysisResult, lastScreenshot || undefined);
     }
-  }, [analysisResult, isAnalyzing, handleAnalysisResult]);
+  }, [analysisResult, isAnalyzing, handleAnalysisResult, lastScreenshot]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -87,7 +110,10 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
   const handleEndSession = () => {
     setIsActive(false);
     clearAnalysis();
-    onEndSession();
+    
+    // Generate session stats and call completion handler
+    const stats = sessionAnalyticsService.endSession();
+    onSessionComplete(stats);
   };
 
   const formatConfidence = (confidence: number) => {
@@ -323,22 +349,7 @@ export function ActiveSession({ sessionData, lastScreenshot, isCapturing, onEndS
           </CardContent>
         </Card>
 
-        {/* Session Complete */}
-        {timeRemaining <= 0 && (
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-800">🎉 Session Complete!</CardTitle>
-              <CardDescription className="text-green-700">
-                Great job staying focused for {sessionData.duration} minutes!
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={handleEndSession} className="bg-green-600 hover:bg-green-700">
-                Return to Home
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* Session will auto-complete when timer reaches 0:00 */}
       </div>
     </div>
   );

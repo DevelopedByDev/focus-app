@@ -7,11 +7,16 @@ import { Eye, Shield, Zap, Brain, Clock, Target } from "lucide-react";
 import { useState } from "react";
 import { SessionSetupDialog, SessionData } from "@/components/SessionSetupDialog";
 import { ActiveSession } from "@/components/ActiveSession";
+import { SessionSummary } from "@/components/SessionSummary";
 import { useScreenCapture } from "@/hooks/useScreenCapture";
+import { SessionStats } from "@/services/sessionAnalytics";
 
 export default function Home() {
   const [isSetupDialogOpen, setIsSetupDialogOpen] = useState(false);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
+  const [completedSession, setCompletedSession] = useState<SessionData | null>(null);
+  const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
   const { isCapturing, lastScreenshot, error, startCapture, stopCapture } = useScreenCapture();
 
   const handleStartSession = () => {
@@ -33,7 +38,41 @@ export default function Home() {
   const handleEndSession = () => {
     stopCapture();
     setCurrentSession(null);
+    setShowSummary(false);
   };
+
+  const handleSessionComplete = (stats: SessionStats) => {
+    stopCapture();
+    setSessionStats(stats);
+    setCompletedSession(currentSession);
+    setShowSummary(true);
+    setCurrentSession(null);
+  };
+
+  const handleStartNewSession = () => {
+    setShowSummary(false);
+    setSessionStats(null);
+    setCompletedSession(null);
+    setIsSetupDialogOpen(true);
+  };
+
+  const handleReturnHome = () => {
+    setShowSummary(false);
+    setSessionStats(null);
+    setCompletedSession(null);
+  };
+
+  // Show session summary if completed
+  if (showSummary && sessionStats && completedSession) {
+    return (
+      <SessionSummary
+        sessionData={completedSession}
+        sessionStats={sessionStats}
+        onStartNewSession={handleStartNewSession}
+        onReturnHome={handleReturnHome}
+      />
+    );
+  }
 
   // Show active session if one is running
   if (currentSession) {
@@ -43,6 +82,7 @@ export default function Home() {
         lastScreenshot={lastScreenshot}
         isCapturing={isCapturing}
         onEndSession={handleEndSession}
+        onSessionComplete={handleSessionComplete}
       />
     );
   }
